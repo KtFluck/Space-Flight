@@ -1,0 +1,202 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js">
+    </script>
+    <title>Space Flight </title>
+    <style>
+      #container {
+        background: #000000;
+			width: 40%;
+			height: 100%;
+      }
+    </style>
+    <meta charset=utf-8 />
+  </head>
+
+  <body>
+    <div id="container">
+    </div>  
+  </body>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js">
+  </script> 
+
+	<script src="http://uopeopleweb.com/js/dat.gui.min.js">
+  </script>
+
+	<script src="https://threejs.org/build/three.js">
+  </script>
+
+  <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js">
+  </script>
+
+	<script src="http://uopeopleweb.com/js/math.js">
+  </script>
+
+	<script src="http://uopeopleweb.com/js/Detector.js">
+  </script>
+
+//Java Script code to create scene and camera//
+	<script type="text/javascript">
+
+    // set the scene size
+    var WIDTH = 600,   
+        HEIGHT = 400;
+
+    // set some camera attributes
+    var VIEW_ANGLE = 30,
+        ASPECT = WIDTH / HEIGHT,
+        NEAR = 1,
+        FAR = 1000; 
+
+    // get the DOM element to attach to
+    var $container = $('#container');
+    // create a WebGL renderer
+    var renderer = new THREE.WebGLRenderer({ antialias: true });  
+    
+    //create scene
+    var scene = new THREE.Scene(); 
+    var clock = new THREE.Clock();
+    
+    //create camera and add to scene
+    var camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+    camera.position.z = 200; 
+    scene.add(camera)
+    
+    //disable rotating camera
+    var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+    cameraControls.enabled = false;
+
+    // start the renderer
+    renderer.setSize(WIDTH, HEIGHT);
+
+    // attach the render-supplied DOM element
+    $container.append(renderer.domElement);
+  
+
+    //three.js code to create the earth and moon and have them rotate. //
+
+    //Create directional light in white to simulate the light of the sun
+    var sun = new THREE.DirectionalLight( 0xFFFFFF, 1 )
+
+    //set light to the right of the earth and moon
+    sun.position.set(90,0,75)
+
+    //have the light cast a shaod to simulate night and day on the earth 
+    sun.castShadow = true; 
+    sun.shadowDarkness = 150;
+    sun.shadowCameraVisible=true;
+    scene.add( sun ) //Let there be light!
+
+    //Add the universe with the milkyway in the background
+    //Create a sphere that the scene will live in
+    var universe = new THREE.SphereGeometry(300, 10, 10);
+
+    //mesh the inside of the sphere with the Milky Way texture
+    var milkyWay = new THREE.MeshPhongMaterial({
+    map: new THREE.TextureLoader().load("https://upload.wikimedia.org/wikipedia/commons/6/60/ESO_-_Milky_Way.jpg"),
+    side: THREE.DoubleSide,
+    shininess: 0  
+    });
+
+    //create the star mesh
+    var stars = new THREE.Mesh(universe, milkyWay);
+    scene.add(stars);//add the stars
+
+    //create the earth with a sphere
+    var earthSphere = new THREE.SphereGeometry( 10.3, 50, 50 );
+    
+    //add the earth texture to the sphere
+    var earthTexture = new THREE.MeshPhongMaterial({
+      map: new THREE.TextureLoader().load("https://upload.wikimedia.org/wikipedia/commons/9/9d/MODIS_Map.jpg"),
+      color: 0xaaaaaa,
+      specular: 0x333333,
+      shininess: 15
+    });
+    
+    //create the earth mesh
+    var earth = new THREE.Mesh(earthSphere, earthTexture);
+    scene.add(earth); //add earth to the scene
+      
+    //give shadow properties to the earth
+    earth.receiveShadow = true;
+    earth.castShadow = true;
+
+    //Create the moon with a sphere
+    var moonSphere = new THREE.SphereGeometry(3.5, 50, 50 );
+    
+    //add the moons texture
+    var moonTexture = new THREE.MeshPhongMaterial({
+      map: new THREE.TextureLoader().load("https://upload.wikimedia.org/wikipedia/commons/7/74/Moon_texture.jpg"),
+      color: 0xaaaaaa,
+      specular: 0x333333,
+      shininess: 7
+      });
+
+    //Create moon mesh
+    var moon = new THREE.Mesh(moonSphere, moonTexture);
+      
+    // place the moon in a position away from the earth
+    moon.position.x=9000
+      
+    //add the earth mesh to the scene
+    scene.add(moon);
+    
+    //set moon shadow properties
+    moon.receiveShadow = true;
+    moon.castShadow = true;
+    
+    //set rotation
+    var r = 35;
+    var theta = 0;
+    var dTheta = 2 * Math.PI / 1000;
+    
+    //animate and render
+    function animate() {
+      requestAnimationFrame(animate);
+      render();
+      }
+      
+    //spinning    
+    function render() {
+      cameraControls.update();
+      //set spead of rotation
+      earth.rotation.y +=0.003
+      moon.rotation.y -=0.01
+      
+      //increment of rotation per frame      
+      theta -= dTheta;
+      moon.position.x = r * Math.cos(theta);
+      moon.position.z = r * Math.sin(theta);
+      
+      //fun camera controls for rotation
+      //set camera to point at the earth using vector
+      var earthVector = new THREE.Vector3(0,0,0);
+      //set movement of vector per frame
+      var vx = .02;
+      var vy = .02;
+      var vz = .00;
+
+      //Render loop
+      var render = function() {
+        //set spead of earth rotation
+        earth.rotation.y += .00008;
+        //Update the camera position
+        camera.position.x += vx;
+        camera.position.y += vy;
+        camera.position.z += vz;
+      }
+
+      //Set carmera to look at earth using the vector
+      camera.lookAt(earthVector);
+
+      //render scene
+      renderer.render(scene, camera);
+      requestAnimationFrame(render);
+    
+      render();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</html>
